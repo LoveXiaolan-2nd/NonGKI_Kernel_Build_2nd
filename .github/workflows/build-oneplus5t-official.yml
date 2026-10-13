@@ -12,7 +12,7 @@ env:
   CUSTOM_CMDS : "CLANG_TRIPLE=aarch64-linux-gnu-"
   EXTRA_CMDS : "LLVM=1 LLVM_IAS=1"
 
-  KERNEL_SOURCE : "https://github.com/ederevx/x_kernel_oneplus_msm8998.git"
+  KERNEL_SOURCE : "https://github.com/LoveXiaolan-2nd/x_kernel_oneplus_msm8998.git"
   KERNEL_BRANCH : "old"
 
   CLANG_SOURCE : "https://github.com/LineageOS/android_prebuilts_clang_kernel_linux-x86_clang-r416183b.git"
