@@ -126,23 +126,36 @@ jobs:
       - name: 🔍 Compiler probe
         run: |
           set +e
+          cd $GITHUB_WORKSPACE/device_kernel
+          export PATH=$GITHUB_WORKSPACE/clang-custom/bin:$PATH
+
+          echo "=== clang-custom ==="
+          ls -la $GITHUB_WORKSPACE/clang-custom 2>&1 | head -n 15
           echo "=== which -a clang ==="
           which -a clang
           echo "=== clang --version ==="
-          clang --version
-          echo "=== ccache ==="
-          ccache --version | head -n 1
-          echo "=== stack protector via clang ==="
-          clang -fstack-protector-strong -E -x c /dev/null -o /dev/null
-          echo "exit=$?"
-          echo "=== stack protector via ccache clang ==="
-          ccache clang -fstack-protector-strong -E -x c /dev/null -o /dev/null
-          echo "exit=$?"
-          echo "=== stack protector with target ==="
-          clang --target=aarch64-linux-gnu -fstack-protector-strong -E -x c /dev/null -o /dev/null
-          echo "exit=$?"
-          echo "=== PATH ==="
-          echo "$PATH" | tr ':' '\n'
+          clang --version | head -n 3
+
+          echo "=== make defconfig ==="
+          make CC="ccache clang" CLANG_TRIPLE=aarch64-linux-gnu- SUBARCH=arm64 \
+               O=out ARCH=arm64 vendor/tucana_user_defconfig > /tmp/def.log 2>&1
+          echo "defconfig_exit=$?"
+          tail -n 5 /tmp/def.log
+          echo "=== stackprotector symbols ==="
+          grep -i stackprotector out/.config
+
+          echo "=== make sptest (exact cc-option command) ==="
+          make CC="ccache clang" CLANG_TRIPLE=aarch64-linux-gnu- SUBARCH=arm64 \
+               O=out ARCH=arm64 \
+               --eval='sptest: ; @$(CC) $(KBUILD_CPPFLAGS) $(KBUILD_CFLAGS) -fstack-protector-strong -c -o /tmp/sp.o -x c /dev/null && echo SP_OK' \
+               sptest
+          echo "sptest_exit=$?"
+
+          echo "=== raw clang flags ==="
+          make CC="ccache clang" CLANG_TRIPLE=aarch64-linux-gnu- SUBARCH=arm64 \
+               O=out ARCH=arm64 \
+               --eval='printflags: ; @echo FLAGS_START $(KBUILD_CPPFLAGS) $(KBUILD_CFLAGS) FLAGS_END' \
+               printflags 2>/dev/null | grep FLAGS_START
 
       - name: 🪝 Patch Kernel of SUSFS
         uses: ./.github/workflows/patch-susfs
