@@ -214,6 +214,9 @@ jobs:
           printf 'CONFIG_SCHED_CORE_CTL=y\n' >> "$DEFCONFIG"
           printf '\nunsigned int sysctl_sched_conservative_pl = 0;\nunsigned int sysctl_sched_many_wakeup_threshold = 0;\n' >> kernel/sysctl.c
           tail -n 3 kernel/sysctl.c
+          # core_ctl.c 是个空壳，walt.c 却调用 core_ctl_check()
+          printf '\nvoid core_ctl_check(u64 wallclock) { }\n' >> kernel/sched/core_ctl.c
+          tail -n 2 kernel/sched/core_ctl.c
           tail -n 3 Makefile
 
       - name: 🧰 Patch Kernel of Re:Kernel
