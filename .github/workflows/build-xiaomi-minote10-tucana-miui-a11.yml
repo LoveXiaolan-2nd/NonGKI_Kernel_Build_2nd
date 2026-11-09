@@ -39,7 +39,7 @@ env:
   GCC_32_SOURCE : ""
   GCC_32_BRANCH : ""
 
-  DEFCONFIG_SOURCE : "https://raw.githubusercontent.com/LoveXiaolan-2nd/NonGKI_Kernel_Build_2nd/mainline/tucana_eu_defconfig"
+  DEFCONFIG_SOURCE : ""
   DEFCONFIG_NAME : "vendor/tucana_eu_defconfig"
   DEFCONFIG_ORIGIN_IMAGE: ""
   DEFCONFIG_FROM_BOOT: false
@@ -176,6 +176,10 @@ jobs:
           # 先关掉 stack protector（cc-option 检测在这套 clang 上会失败）
           # 再补上 r-oss 缺失的 CPU mask 字符串符号（留空会让 kconfig 进交互模式然后 aborted）
           DEFCONFIG="arch/arm64/configs/${DEFCONFIG_NAME}"
+          # build-ready 在 clone 之前就下 defconfig，目录还不存在会失败；这里自己下
+          mkdir -p "$(dirname "$DEFCONFIG")"
+          curl -sSL --retry 3 -o "$DEFCONFIG" "https://raw.githubusercontent.com/LoveXiaolan-2nd/NonGKI_Kernel_Build_2nd/mainline/tucana_eu_defconfig"
+          echo "[i] defconfig downloaded: $(wc -l < "$DEFCONFIG") lines"
           sed -i -e 's/^CONFIG_CC_STACKPROTECTOR_STRONG=y/# CONFIG_CC_STACKPROTECTOR_STRONG is not set/' \
                  -e 's/^CONFIG_CC_STACKPROTECTOR=y/# CONFIG_CC_STACKPROTECTOR is not set/' \
                  -e '/^CONFIG_LITTLE_CPU_MASK=/d' \
