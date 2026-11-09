@@ -173,17 +173,15 @@ jobs:
           # 内核版本保持源码原样（4.14.117），不做任何版本号对齐。
           echo "[i] kernel version: $(grep -m1 '^SUBLEVEL' Makefile)"
 
-          # 先关掉 stack protector（cc-option 检测在这套 clang 上会失败），
-          # 直接改原始定义，避免追加行被覆盖的问题。
+          # 先关掉 stack protector（cc-option 检测在这套 clang 上会失败）
+          # 再补上 r-oss 缺失的 CPU mask 字符串符号（留空会让 kconfig 进交互模式然后 aborted）
           DEFCONFIG="arch/arm64/configs/${DEFCONFIG_NAME}"
-          sed -i 's/^CONFIG_CC_STACKPROTECTOR_STRONG=y/# CONFIG_CC_STACKPROTECTOR_STRONG is not set/' "$DEFCONFIG"
-          sed -i 's/^CONFIG_CC_STACKPROTECTOR=y/# CONFIG_CC_STACKPROTECTOR is not set/' "$DEFCONFIG"
-          grep -ni stackprotector "$DEFCONFIG"
-
-          # r-oss 的 defconfig 把这两个字符串符号留空了，kconfig 会进交互模式然后 aborted
-          sed -i 's/^CONFIG_LITTLE_CPU_MASK=.*/CONFIG_LITTLE_CPU_MASK="0-5"/' "$DEFCONFIG"
-          sed -i 's/^CONFIG_BIG_CPU_MASK=.*/CONFIG_BIG_CPU_MASK="6-7"/' "$DEFCONFIG"
-          grep -n "CPU_MASK" "$DEFCONFIG"
+          sed -i -e 's/^CONFIG_CC_STACKPROTECTOR_STRONG=y/# CONFIG_CC_STACKPROTECTOR_STRONG is not set/' \
+                 -e 's/^CONFIG_CC_STACKPROTECTOR=y/# CONFIG_CC_STACKPROTECTOR is not set/' \
+                 -e '/^CONFIG_LITTLE_CPU_MASK=/d' \
+                 -e '/^CONFIG_BIG_CPU_MASK=/d' "$DEFCONFIG"
+          printf 'CONFIG_LITTLE_CPU_MASK="0-5"\nCONFIG_BIG_CPU_MASK="6-7"\n' >> "$DEFCONFIG"
+          grep -n 'CPU_MASK\|STACKPROTECTOR' "$DEFCONFIG" || true
 
           # host 工具用 GCC13 时会因 -fno-common 报 yylloc multiple definition
           grep -q '^HOSTCFLAGS += -fcommon' Makefile || echo 'HOSTCFLAGS += -fcommon' >> Makefile
