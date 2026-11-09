@@ -182,7 +182,12 @@ jobs:
 
           # host 工具用 GCC13 时会因 -fno-common 报 yylloc multiple definition
           grep -q '^HOSTCFLAGS += -fcommon' Makefile || echo 'HOSTCFLAGS += -fcommon' >> Makefile
-          tail -n 2 Makefile
+
+          # proton clang 的 bin/as 是 x86 的，-no-integrated-as 会把 -EL 传给它然后失败；
+          # 去掉 -no-integrated-as，改用 clang 内置汇编器。
+          sed -i '/^CLANG_FLAGS[[:space:]]*+= -no-integrated-as/d' Makefile
+          grep -n 'no-integrated-as' Makefile || echo "[+] -no-integrated-as removed"
+          tail -n 3 Makefile
 
       - name: 🧰 Patch Kernel of Re:Kernel
         uses: ./.github/workflows/patch-rekernel
