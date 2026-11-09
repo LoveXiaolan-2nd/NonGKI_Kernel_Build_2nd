@@ -128,34 +128,30 @@ jobs:
           set +e
           cd $GITHUB_WORKSPACE/device_kernel
           export PATH=$GITHUB_WORKSPACE/clang-custom/bin:$PATH
+          if [ -f "$GITHUB_WORKSPACE/clang-custom/bin/ld" ]; then
+            mv "$GITHUB_WORKSPACE/clang-custom/bin/ld" "$GITHUB_WORKSPACE/clang-custom/bin/ld.proton.host.bak"
+            echo "[+] sidelined proton host ld"
+          fi
 
-          echo "=== clang-custom ==="
-          ls -la $GITHUB_WORKSPACE/clang-custom 2>&1 | head -n 15
-          echo "=== which -a clang ==="
+          echo "=== which -a clang / as / ld ==="
           which -a clang
+          which -a aarch64-linux-gnu-as as aarch64-linux-gnu-ld
           echo "=== clang --version ==="
-          clang --version | head -n 3
+          clang --version | head -n 2
 
           echo "=== make defconfig ==="
           make CC="ccache clang" CLANG_TRIPLE=aarch64-linux-gnu- SUBARCH=arm64 \
                O=out ARCH=arm64 vendor/tucana_user_defconfig > /tmp/def.log 2>&1
           echo "defconfig_exit=$?"
-          tail -n 5 /tmp/def.log
+          tail -n 3 /tmp/def.log
           echo "=== stackprotector symbols ==="
           grep -i stackprotector out/.config
 
-          echo "=== make sptest (exact cc-option command) ==="
+          echo "=== spinfo (CC / stackp-flag / cc-option / real compile) ==="
           make CC="ccache clang" CLANG_TRIPLE=aarch64-linux-gnu- SUBARCH=arm64 \
                O=out ARCH=arm64 \
-               --eval='sptest: ; @$(CC) $(KBUILD_CPPFLAGS) $(KBUILD_CFLAGS) -fstack-protector-strong -c -o /tmp/sp.o -x c /dev/null && echo SP_OK' \
-               sptest
-          echo "sptest_exit=$?"
-
-          echo "=== raw clang flags ==="
-          make CC="ccache clang" CLANG_TRIPLE=aarch64-linux-gnu- SUBARCH=arm64 \
-               O=out ARCH=arm64 \
-               --eval='printflags: ; @echo FLAGS_START $(KBUILD_CPPFLAGS) $(KBUILD_CFLAGS) FLAGS_END' \
-               printflags 2>/dev/null | grep FLAGS_START
+               --eval='spinfo: ; @echo "CC=[$(CC)] FLAG=[$(stackp-flag)] RES=[$(call cc-option,$(stackp-flag))]"; $(CC) $(KBUILD_CPPFLAGS) $(KBUILD_CFLAGS) -fstack-protector-strong -c -o /tmp/sp.o -x c /dev/null && echo SP_OK || echo SP_FAIL' \
+               spinfo 2>&1 | tail -n 6
 
       - name: 🪝 Patch Kernel of SUSFS
         uses: ./.github/workflows/patch-susfs
@@ -176,6 +172,12 @@ jobs:
 
           # 内核版本保持源码原样（4.14.117），不做任何版本号对齐。
           echo "[i] kernel version: $(grep -m1 '^SUBLEVEL' Makefile)"
+
+          # 先关掉 stack protector（cc-option 检测在这套 clang 上会失败），
+          # 让编译能继续往下跑，暴露出真正的编译错误。
+          DEFCONFIG="arch/arm64/configs/${DEFCONFIG_NAME}"
+          printf '\n# CONFIG_CC_STACKPROTECTOR is not set\n# CONFIG_CC_STACKPROTECTOR_STRONG is not set\n# CONFIG_CC_STACKPROTECTOR_REGULAR is not set\n' >> "$DEFCONFIG"
+          tail -n 4 "$DEFCONFIG"
 
       - name: 🧰 Patch Kernel of Re:Kernel
         uses: ./.github/workflows/patch-rekernel
