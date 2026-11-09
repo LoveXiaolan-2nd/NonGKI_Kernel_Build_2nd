@@ -24,11 +24,11 @@ env:
   DEVICE_NAME : "xiaomi_mi_note_10"
   DEVICE_CODENAME : "tucana"
 
-  CUSTOM_CMDS : "CLANG_TRIPLE=aarch64-linux-gnu- SUBARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-"
+  CUSTOM_CMDS : "CLANG_TRIPLE=aarch64-linux-gnu- SUBARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- LD=ld.lld"
   EXTRA_CMDS : ""
 
-  KERNEL_SOURCE : "https://github.com/MiCode/Xiaomi_Kernel_OpenSource.git"
-  KERNEL_BRANCH : "tucana-q-oss"
+  KERNEL_SOURCE : "https://github.com/TheVoyager0777/Tucana_Kernel_New_Android_R.git"
+  KERNEL_BRANCH : "tucana-r-oss"
 
   CLANG_SOURCE : "https://github.com/kdrag0n/proton-clang.git"
   CLANG_BRANCH : "master"
