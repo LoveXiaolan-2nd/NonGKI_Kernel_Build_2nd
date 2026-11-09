@@ -190,13 +190,13 @@ jobs:
           if [ -f "$CLANGBIN/as" ] && [ ! -e "$CLANGBIN/as.orig" ]; then
             mv "$CLANGBIN/as" "$CLANGBIN/as.orig"
             cat > "$CLANGBIN/as" <<'EOF'
-#!/bin/sh
-DIR=$(dirname "$0")
-case " $* " in
-  *" -EL "*) exec "$DIR/aarch64-linux-gnu-as" "$@" ;;
-  *)         exec "$DIR/as.orig" "$@" ;;
-esac
-EOF
+          #!/bin/sh
+          DIR=$(dirname "$0")
+          case " $* " in
+            *" -EL "*) exec "$DIR/aarch64-linux-gnu-as" "$@" ;;
+            *)         exec "$DIR/as.orig" "$@" ;;
+          esac
+          EOF
             chmod +x "$CLANGBIN/as"
             echo "[+] installed as wrapper"
           fi
