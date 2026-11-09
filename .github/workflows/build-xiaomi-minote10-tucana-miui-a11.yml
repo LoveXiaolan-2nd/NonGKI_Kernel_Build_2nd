@@ -204,6 +204,11 @@ jobs:
             echo "[+] installed as wrapper"
           fi
           ls -l "$CLANGBIN/as" "$CLANGBIN/aarch64-linux-gnu-as" 2>&1
+          # r-oss 源码 bug：cpuset_write_resmask_assist() 用了 struct cs_target，
+          # 但结构体定义在 #ifdef CONFIG_CPUSET_ASSIST 里，函数本身没包 -> 编译报 incomplete type
+          perl -0pi -e 's/\nstatic ssize_t cpuset_write_resmask_assist\(/\n#ifdef CONFIG_CPUSET_ASSIST\nstatic ssize_t cpuset_write_resmask_assist\(/' kernel/cgroup/cpuset.c
+          perl -0pi -e 's/\nstatic ssize_t cpuset_write_resmask_wrapper\(/\n#endif\nstatic ssize_t cpuset_write_resmask_wrapper\(/' kernel/cgroup/cpuset.c
+          grep -n 'CONFIG_CPUSET_ASSIST' kernel/cgroup/cpuset.c | head -n 5 || true
           tail -n 3 Makefile
 
       - name: 🧰 Patch Kernel of Re:Kernel
