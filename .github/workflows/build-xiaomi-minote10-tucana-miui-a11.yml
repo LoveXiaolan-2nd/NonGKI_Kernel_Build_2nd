@@ -180,6 +180,11 @@ jobs:
           sed -i 's/^CONFIG_CC_STACKPROTECTOR=y/# CONFIG_CC_STACKPROTECTOR is not set/' "$DEFCONFIG"
           grep -ni stackprotector "$DEFCONFIG"
 
+          # r-oss 的 defconfig 把这两个字符串符号留空了，kconfig 会进交互模式然后 aborted
+          sed -i 's/^CONFIG_LITTLE_CPU_MASK=.*/CONFIG_LITTLE_CPU_MASK="0-5"/' "$DEFCONFIG"
+          sed -i 's/^CONFIG_BIG_CPU_MASK=.*/CONFIG_BIG_CPU_MASK="6-7"/' "$DEFCONFIG"
+          grep -n "CPU_MASK" "$DEFCONFIG"
+
           # host 工具用 GCC13 时会因 -fno-common 报 yylloc multiple definition
           grep -q '^HOSTCFLAGS += -fcommon' Makefile || echo 'HOSTCFLAGS += -fcommon' >> Makefile
 
