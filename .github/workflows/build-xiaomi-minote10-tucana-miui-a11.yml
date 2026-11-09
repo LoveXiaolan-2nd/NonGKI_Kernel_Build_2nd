@@ -24,7 +24,7 @@ env:
   DEVICE_NAME : "xiaomi_mi_note_10"
   DEVICE_CODENAME : "tucana"
 
-  CUSTOM_CMDS : "CLANG_TRIPLE=aarch64-linux-gnu- SUBARCH=arm64"
+  CUSTOM_CMDS : "CLANG_TRIPLE=aarch64-linux-gnu- SUBARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-"
   EXTRA_CMDS : ""
 
   KERNEL_SOURCE : "https://github.com/MiCode/Xiaomi_Kernel_OpenSource.git"
@@ -179,6 +179,10 @@ jobs:
           sed -i 's/^CONFIG_CC_STACKPROTECTOR_STRONG=y/# CONFIG_CC_STACKPROTECTOR_STRONG is not set/' "$DEFCONFIG"
           sed -i 's/^CONFIG_CC_STACKPROTECTOR=y/# CONFIG_CC_STACKPROTECTOR is not set/' "$DEFCONFIG"
           grep -ni stackprotector "$DEFCONFIG"
+
+          # host 工具用 GCC13 时会因 -fno-common 报 yylloc multiple definition
+          grep -q '^HOSTCFLAGS += -fcommon' Makefile || echo 'HOSTCFLAGS += -fcommon' >> Makefile
+          tail -n 2 Makefile
 
       - name: 🧰 Patch Kernel of Re:Kernel
         uses: ./.github/workflows/patch-rekernel
