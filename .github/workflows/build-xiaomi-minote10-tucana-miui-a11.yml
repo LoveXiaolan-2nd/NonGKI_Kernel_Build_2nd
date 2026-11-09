@@ -180,7 +180,7 @@ jobs:
                  -e 's/^CONFIG_CC_STACKPROTECTOR=y/# CONFIG_CC_STACKPROTECTOR is not set/' \
                  -e '/^CONFIG_LITTLE_CPU_MASK=/d' \
                  -e '/^CONFIG_BIG_CPU_MASK=/d' "$DEFCONFIG"
-          printf 'CONFIG_LITTLE_CPU_MASK="0-5"\nCONFIG_BIG_CPU_MASK="6-7"\n' >> "$DEFCONFIG"
+          printf 'CONFIG_LITTLE_CPU_MASK=63\nCONFIG_BIG_CPU_MASK=192\n' >> "$DEFCONFIG"
           grep -n 'CPU_MASK\|STACKPROTECTOR' "$DEFCONFIG" || true
 
           # host 工具用 GCC13 时会因 -fno-common 报 yylloc multiple definition
