@@ -183,10 +183,24 @@ jobs:
           # host 工具用 GCC13 时会因 -fno-common 报 yylloc multiple definition
           grep -q '^HOSTCFLAGS += -fcommon' Makefile || echo 'HOSTCFLAGS += -fcommon' >> Makefile
 
-          # proton clang 的 bin/as 是 x86 的，-no-integrated-as 会把 -EL 传给它然后失败；
-          # 去掉 -no-integrated-as，改用 clang 内置汇编器。
-          sed -i '/^CLANG_FLAGS[[:space:]]*+= -no-integrated-as/d' Makefile
-          grep -n 'no-integrated-as' Makefile || echo "[+] -no-integrated-as removed"
+          # proton clang 的 bin/as 是 x86 的，而 -no-integrated-as 下 clang 会带 -EL 调它，
+          # 结果报 "unrecognized option '-EL'"。包一层：带 -EL 用 aarch64 的 GNU as，
+          # 不带 -EL（HOSTCC 编 x86 工具）用原来的 as。
+          CLANGBIN="$GITHUB_WORKSPACE/clang-custom/bin"
+          if [ -f "$CLANGBIN/as" ] && [ ! -e "$CLANGBIN/as.orig" ]; then
+            mv "$CLANGBIN/as" "$CLANGBIN/as.orig"
+            cat > "$CLANGBIN/as" <<'EOF'
+#!/bin/sh
+DIR=$(dirname "$0")
+case " $* " in
+  *" -EL "*) exec "$DIR/aarch64-linux-gnu-as" "$@" ;;
+  *)         exec "$DIR/as.orig" "$@" ;;
+esac
+EOF
+            chmod +x "$CLANGBIN/as"
+            echo "[+] installed as wrapper"
+          fi
+          ls -l "$CLANGBIN/as" "$CLANGBIN/aarch64-linux-gnu-as" 2>&1
           tail -n 3 Makefile
 
       - name: 🧰 Patch Kernel of Re:Kernel
