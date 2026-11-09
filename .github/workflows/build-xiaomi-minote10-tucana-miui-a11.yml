@@ -123,6 +123,27 @@ jobs:
       - name: ⚙️ Get neccssary tools
         uses: ./.github/workflows/build-ready
 
+      - name: 🔍 Compiler probe
+        run: |
+          set +e
+          echo "=== which -a clang ==="
+          which -a clang
+          echo "=== clang --version ==="
+          clang --version
+          echo "=== ccache ==="
+          ccache --version | head -n 1
+          echo "=== stack protector via clang ==="
+          clang -fstack-protector-strong -E -x c /dev/null -o /dev/null
+          echo "exit=$?"
+          echo "=== stack protector via ccache clang ==="
+          ccache clang -fstack-protector-strong -E -x c /dev/null -o /dev/null
+          echo "exit=$?"
+          echo "=== stack protector with target ==="
+          clang --target=aarch64-linux-gnu -fstack-protector-strong -E -x c /dev/null -o /dev/null
+          echo "exit=$?"
+          echo "=== PATH ==="
+          echo "$PATH" | tr ':' '\n'
+
       - name: 🪝 Patch Kernel of SUSFS
         uses: ./.github/workflows/patch-susfs
 
