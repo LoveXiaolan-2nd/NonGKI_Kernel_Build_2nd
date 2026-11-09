@@ -174,10 +174,11 @@ jobs:
           echo "[i] kernel version: $(grep -m1 '^SUBLEVEL' Makefile)"
 
           # 先关掉 stack protector（cc-option 检测在这套 clang 上会失败），
-          # 让编译能继续往下跑，暴露出真正的编译错误。
+          # 直接改原始定义，避免追加行被覆盖的问题。
           DEFCONFIG="arch/arm64/configs/${DEFCONFIG_NAME}"
-          printf '\n# CONFIG_CC_STACKPROTECTOR is not set\n# CONFIG_CC_STACKPROTECTOR_STRONG is not set\n# CONFIG_CC_STACKPROTECTOR_REGULAR is not set\n' >> "$DEFCONFIG"
-          tail -n 4 "$DEFCONFIG"
+          sed -i 's/^CONFIG_CC_STACKPROTECTOR_STRONG=y/# CONFIG_CC_STACKPROTECTOR_STRONG is not set/' "$DEFCONFIG"
+          sed -i 's/^CONFIG_CC_STACKPROTECTOR=y/# CONFIG_CC_STACKPROTECTOR is not set/' "$DEFCONFIG"
+          grep -ni stackprotector "$DEFCONFIG"
 
       - name: 🧰 Patch Kernel of Re:Kernel
         uses: ./.github/workflows/patch-rekernel
